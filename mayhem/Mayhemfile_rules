@@ -1,0 +1,6 @@
+project: savantenvs/vsmtp
+target: rules
+
+cmds:
+  - cmd: /mayhem/rules
+    libfuzzer: true

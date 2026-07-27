@@ -1,0 +1,77 @@
+# Additive Mayhem cargo-fuzz crate for vSMTP.
+#
+# Upstream ships its OWN fuzz crate (fuzz/fuzz_targets/client.rs), but that target
+# is a NETWORK client that connects to an already-running SMTP server on
+# 0.0.0.0:10025 (it links nothing of vSMTP) — it cannot fuzz standalone under
+# Mayhem. This additive crate re-fits the four original in-process targets
+# (mime-parser, receiver, rules, server-config) onto the current upstream API,
+# referencing the upstream crates by relative path. Nothing under src/ is modified.
+#
+# Dependency versions are pinned via the upstream root Cargo.lock (build.sh seeds
+# mayhem/fuzz/Cargo.lock from it) so this isolated workspace resolves exactly the
+# versions upstream tested — avoiding newer rhai/rsasl that would need source
+# patches on a nightly toolchain.
+[package]
+name = "vsmtp-mayhem-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.7"
+
+# Runtime + helpers used by the receiver harness (versions pinned by the seeded lock).
+tokio = { version = "1", default-features = false, features = [
+  "rt",
+  "net",
+  "io-util",
+  "time",
+  "macros",
+  "sync",
+] }
+tokio-stream = { version = "0.1", default-features = false }
+time = { version = "0.3", default-features = false, features = ["std"] }
+uuid = { version = "1", default-features = false, features = ["v4"] }
+
+# Upstream crates referenced by path (additive — src/ is never modified).
+vsmtp-mail-parser = { path = "../../src/vsmtp/vsmtp-mail-parser" }
+vsmtp-config = { path = "../../src/vsmtp/vsmtp-config" }
+vsmtp-rule-engine = { path = "../../src/vsmtp/vsmtp-rule-engine", features = ["builder"] }
+vsmtp-server = { path = "../../src/vsmtp/vsmtp-server" }
+vsmtp-protocol = { path = "../../src/vsmtp/vsmtp-protocol" }
+vqueue = { path = "../../src/vqueue", features = ["testing"] }
+vsmtp-test = { path = "../../src/vsmtp/vsmtp-test" }
+
+# Isolate from the surrounding vSMTP workspace (which `exclude`s fuzz dirs anyway).
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = true
+
+[[bin]]
+name = "mime_parser"
+path = "fuzz_targets/mime_parser.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "server_config"
+path = "fuzz_targets/server_config.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "rules"
+path = "fuzz_targets/rules.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "receiver"
+path = "fuzz_targets/receiver.rs"
+test = false
+doc = false
