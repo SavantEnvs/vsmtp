@@ -1,0 +1,7 @@
+project: savantenvs/vsmtp
+target: receiver
+
+cmds:
+  - cmd: /mayhem/receiver
+    libfuzzer: true
+    dictionary: /mayhem/fuzz/dict/command.dict

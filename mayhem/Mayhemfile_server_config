@@ -1,0 +1,6 @@
+project: savantenvs/vsmtp
+target: server-config
+
+cmds:
+  - cmd: /mayhem/server_config
+    libfuzzer: true
